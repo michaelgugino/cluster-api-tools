@@ -1,0 +1,30 @@
+---
+- hosts: awshosts
+  environment:
+    PATH: "{{ ansible_env.PATH }}:/usr/local/go/bin"
+  tasks:
+    - name: check file exists
+      stat:
+        path: /root/plugins
+      register: file_details
+    - name: "clone cni plugins"
+      command:
+        cmd: "git clone https://github.com/containernetworking/plugins"
+        chdir: /root
+      when: not file_details.stat.exists
+    - name: "build cni plugins"
+      command:
+        cmd: "./build_linux.sh"
+        chdir: /root/plugins
+    - name: "mkdir cni bin"
+      command:
+        cmd: "mkdir -p /opt/cni/bin"
+    - name: "copy cni bins to dirs"
+      shell:
+        cmd: "cp /root/plugins/bin/* /opt/cni/bin/"
+    - name: "mkdir for cni net.d"
+      command:
+        cmd: "mkdir -p /etc/cni/net.d"
+    #- copy:
+    #    src: 10-crio-bridge.conf
+    #    dest: /etc/cni/net.d/10-crio-bridge.conf

@@ -1,0 +1,52 @@
+---
+- hosts: awshosts
+  environment:
+    PATH: "{{ ansible_env.PATH }}:/usr/local/go/bin"
+  tasks:
+    - name: Ansible check file exists example.
+      stat:
+        path: /root/cri-o
+      register: file_details
+    - name: "clone cni crio"
+      command:
+        cmd: "git clone https://github.com/cri-o/cri-o.git"
+        chdir: /root
+      when: not file_details.stat.exists
+    - name: "checkout proper crio version"
+      command:
+        cmd: "git checkout origin/release-1.16"
+        chdir: "/root/cri-o"
+    - name: "build crio"
+      command:
+        cmd: "make"
+        chdir: /root/cri-o
+    - name: "build crio 2"
+      command:
+        cmd: "make install"
+        chdir: /root/cri-o
+    - name: "build crio 3"
+      command:
+        cmd: "make install.config"
+        chdir: /root/cri-o
+    - name: "build crio 4"
+      command:
+        cmd: "make install.systemd"
+        chdir: /root/cri-o
+    - copy:
+        src: "registries.conf"
+        dest: "/etc/containers/registries.conf"
+    - copy:
+        src: "crio.conf"
+        dest: "/etc/crio/crio.conf"
+    - copy:
+        src: "99-k8s-cri.sysctl"
+        dest: "/etc/sysctl.d/99-kubernetes-cri.conf"
+    - copy:
+        src: "crio.modules-load"
+        dest: "/etc/modules-load.d/crio-net.conf"
+    - command: modprobe overlay
+    - command: modprobe br_netfilter
+    - command: sysctl --system
+    - shell: 'for i in {/var/lib/etcd,/etc/kubernetes/pki,/etc/kubernetes/pki/etcd,/etc/cni/net.d}; do sudo mkdir -p $i && sudo chcon -Rt svirt_sandbox_file_t $i; done'
+    - command: "mkdir -p /usr/share/containers/oci/hooks.d"
+    - command: "systemctl enable --now cri-o"

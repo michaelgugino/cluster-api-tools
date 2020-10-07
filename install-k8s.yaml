@@ -1,0 +1,10 @@
+- hosts: awshosts
+  tasks:
+  - copy:
+      src: "k8s.repo"
+      dest: "/etc/yum.repos.d/k8s.repo"
+  - command: "yum install -y kubelet-1.16.1 kubectl-1.16.1 kubeadm-1.16.1"
+  - copy:
+      src: "kubelet.sysconfig"
+      dest: "/etc/sysconfig/kubelet"
+  - command: "systemctl enable --now kubelet"

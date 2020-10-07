@@ -1,0 +1,22 @@
+---
+- hosts: awshosts
+  environment:
+    PATH: "{{ ansible_env.PATH }}:/usr/local/go/bin"
+  tasks:
+    - name: check file exists
+      stat:
+        path: /root/conmon
+      register: file_details
+    - name: "clone conmon"
+      command:
+        cmd: "git clone https://github.com/containers/conmon"
+        chdir: /root
+      when: not file_details.stat.exists
+    - name: "build conmon"
+      command:
+        cmd: "make"
+        chdir: /root/conmon
+    - name: "install conmon"
+      command:
+        cmd: "make install"
+        chdir: /root/conmon

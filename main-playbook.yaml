@@ -1,0 +1,40 @@
+---
+- hosts: awshosts
+  environment:
+    PATH: "{{ ansible_env.PATH }}:/usr/local/go/bin"
+  tasks:
+    - name: "setenforce 0"
+      command: "setenforce 0"
+    - name: upgrade all packages
+      yum:
+        name: '*'
+        state: latest
+      register: task_result
+    - name: Reboot immediately if there was a change.
+      shell: "sleep 5 && reboot"
+      async: 1
+      poll: 0
+      when: task_result is changed
+    - name: Wait for the reboot to complete if there was a change.
+      wait_for_connection:
+        connect_timeout: 20
+        sleep: 5
+        delay: 5
+        timeout: 300
+      when: task_result is changed
+    - command: "yum install -y podman gcc git containers-common device-mapper-devel git glib2-devel glibc-devel glibc-static runc"
+    - name: "download go"
+      command:
+        cmd: curl https://dl.google.com/go/go1.12.14.linux-amd64.tar.gz -o go.tar.gz
+        chdir: /root
+    - name: "untar go"
+      command:
+        cmd: "tar -C /usr/local -xzf go.tar.gz"
+        chdir: /root
+
+
+- import_playbook: install-conmon.yaml
+- import_playbook: install-cni.yaml
+- import_playbook: install-crio.yaml
+- import_playbook: install-k8s.yaml
+- import_playbook: master-kubeadm.yaml
