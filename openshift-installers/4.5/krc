@@ -1,0 +1,3 @@
+#!/bin/bash
+alias ogm="./oc get machines -n openshift-machine-api"
+export KUBECONFIG=$PWD/auth/kubeconfig
