@@ -1,1 +1,4 @@
 bin/*
+venv3/*
+venv/*
+inventory.txt
